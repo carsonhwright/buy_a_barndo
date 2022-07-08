@@ -132,4 +132,5 @@ dmypy.json
 .vscode/
 
 # output stuff
-!output/.gitkeep
+output/temp.txt
+output/temp.json
