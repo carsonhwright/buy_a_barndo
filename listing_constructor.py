@@ -7,9 +7,8 @@ IMPORTANT_SCALE_FACTORS = {'bed': 4, 'lot_size': 3, 'raw_dist': 2, 'bath': 1}
 
 class ListingConstructor():
     _defaults = [
-        '_raw_dict',    '_bedrooms',       '_baths',
-        '_lot_size',    '_raw_dist',       '_raw_scale',
-        '_raw_html',    '_full_page_list', '_county_dictionaries'
+        '_raw_dict',            '_raw_html',    '_full_page_list',
+        '_county_dictionaries'
     ]
     _default_value = None
 
