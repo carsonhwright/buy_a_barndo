@@ -134,3 +134,4 @@ dmypy.json
 # output stuff
 output/temp.txt
 output/temp.json
+output/*.html
