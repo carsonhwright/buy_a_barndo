@@ -18,6 +18,10 @@ class ListingConstructor():
         self.set_county_dictionaries()
     
     def set_raw_html(self, filepath):
+        """
+        This grabs all the raw html data that was written to html files in the output folder, the
+        html files were written by find_in_zillow 
+        """
         with open(filepath, 'r', encoding='utf-8') as f:
             self._raw_html = f.read()
 
@@ -31,9 +35,9 @@ class ListingConstructor():
     def set_county_dictionaries(self):
         paths = []
         self._county_dictionaries = {}
-        for files in os.listdir(".\\output\\"):
-            if files.endswith('.html'):
-                paths.append(Path(f'.\\output\\{files}'))
+        for file in os.listdir(".\\output\\"):
+            if file.endswith('.html'):
+                paths.append(Path(f'.\\output\\{file}'))
         for path in paths:
             self.set_raw_html(path)
             self.set_full_page_list()

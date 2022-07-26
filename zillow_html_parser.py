@@ -14,7 +14,7 @@ class MyHTMLParser(HTMLParser):
 
     def handle_data(self, data):
         '''print("Encountered some data  :", data)'''
-        if "<!--{\"queryState\":{\"pagination\":{},\"usersSearchTerm\":" in data:
+        if "defaultQueryState" in data:
             self.desired_data = data
             desired_html_regex = re.compile("(?!<!--)\{[\s\S\n]*(?<=)}")
             clean_dict = re.search(desired_html_regex, self.desired_data).group(0)
