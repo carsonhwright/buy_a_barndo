@@ -1,6 +1,11 @@
 from listing_constructor import ListingConstructor
 
-class Scorer(object):
+MIN_LOT_SIZE, IDEAL_LOT_SIZE = 0.25, 0.5
+CARSON_WORK_LOC_LAT, CARSON_WORK_LOC_LONG = 33.787034278680466, -84.37958931718705
+ANGELA_WORK_LOC_LAT, ANGELA_WORK_LOC_LONG = 33.80001232871316, -84.3243549597764
+MIN_SCORE = 6.0
+ACRE_TO_SQFT = 43560.0
+class ListingScorer(object):
     _defaults = [
         '_data_set', '_initial_pass_listing', '_min_score'
     ]
@@ -17,7 +22,6 @@ class Scorer(object):
         self.__dict__.update(dict.fromkeys(self._defaults, self._default_value))
         self.__dict__.update(dict.fromkeys(self._volatiles, self._default_value))
         self.__dict__.update(kwargs)
-        self._min_score = 2.5
         self.set_data_set()
         self.score_data_set()
 
@@ -34,7 +38,7 @@ class Scorer(object):
         elif self._raw_price == high :
             self._price_score = 0.5
         else:
-            self._price_score = (slope * self._raw_price) + 1.0
+            self._price_score = (slope * self._raw_price) + 1.833333
     
     def set_bed_score(self):
         if self._bedrooms >= 4:
@@ -55,10 +59,18 @@ class Scorer(object):
             self._bath_score = 2.0
         elif self._bathrooms < 2:
             self._bath_score = 1.0
+
+    def set_lot_score(self):
+        if self._lot_size >= IDEAL_LOT_SIZE:
+            self._lot_score = 1.0
+        elif self._lot_size >= MIN_LOT_SIZE and self._lot_size < IDEAL_LOT_SIZE:
+            self._lot_score = 2 * self._lot_size
+        else:
+            self._lot_score = 0.5
     
     def set_raw_score(self):
         self._raw_score = (
-            (self._bed_score + self._bath_score)
+            (self._bed_score + self._bath_score + self._lot_score)
             * self._price_score 
         )
     
@@ -92,13 +104,20 @@ class Scorer(object):
             self._bathrooms = self._currently_assessed_listing["baths"]
             self._raw_loc = self._currently_assessed_listing["latLong"]
             self._lot_size = self._currently_assessed_listing["hdpData"]["homeInfo"]["lotAreaValue"]
+            if self._currently_assessed_listing["hdpData"]["homeInfo"]["lotAreaUnit"] == "sqft":
+                self._lot_size = self._lot_size / ACRE_TO_SQFT
             self.set_price_score()
             self.set_bed_score()
             self.set_bath_score()
+            self.set_lot_score()
+            # all scores need to be set before this gets executed
             self.set_raw_score()
+            temp = self._currently_assessed_listing["imgSrc"]
+            # debugging output
+            # print(f"bedscore: {self._bed_score} bathscore: {self._bath_score} lotscore: {self._lot_score} pricescore: {self._price_score}")
             # doing some debugging here
             
-            # if self._raw_score > self._min_score:
-            #     self._initial_pass_listing.append(self._currently_assessed_listing)
+            if self._raw_score > MIN_SCORE:
+                self._initial_pass_listing.append(self._currently_assessed_listing)
             self.clear_volatiles()
             
