@@ -1,9 +1,13 @@
+import math
+
 from listing_constructor import ListingConstructor
 
 MIN_LOT_SIZE, IDEAL_LOT_SIZE = 0.25, 0.5
 CARSON_WORK_LOC_LAT, CARSON_WORK_LOC_LONG = 33.787034278680466, -84.37958931718705
 ANGELA_WORK_LOC_LAT, ANGELA_WORK_LOC_LONG = 33.80001232871316, -84.3243549597764
-MIN_SCORE = 6.0
+LATITUDE_TO_MILES, LONGITUDE_TO_MILES = 68.939, 54.583
+MAX_DIST = 20.0
+MIN_SCORE = 5.0
 ACRE_TO_SQFT = 43560.0
 class ListingScorer(object):
     _defaults = [
@@ -67,6 +71,22 @@ class ListingScorer(object):
             self._lot_score = 2 * self._lot_size
         else:
             self._lot_score = 0.5
+
+    def _work_dist_score(self):
+        """
+        Gets distances from respective workplaces, averages them, and then assigns
+        them a score based on MAX_DIST
+        """
+
+    def calculate_pythag_dist(lat1, long1, lat2, long2):
+        """
+        Calculates distance from two points using latitude and longitude
+        """
+        lat_diff = abs(lat1 - lat2) * LATITUDE_TO_MILES
+        long_diff = abs(long1 - long2) * LONGITUDE_TO_MILES
+
+        dist = math.sqrt(lat_diff**2 + long_diff**2)
+        return dist
     
     def set_raw_score(self):
         self._raw_score = (
@@ -113,6 +133,7 @@ class ListingScorer(object):
             # all scores need to be set before this gets executed
             self.set_raw_score()
             temp = self._currently_assessed_listing["imgSrc"]
+            self._currently_assessed_listing["initial_raw_score"] = self._raw_score
             # debugging output
             # print(f"bedscore: {self._bed_score} bathscore: {self._bath_score} lotscore: {self._lot_score} pricescore: {self._price_score}")
             # doing some debugging here
