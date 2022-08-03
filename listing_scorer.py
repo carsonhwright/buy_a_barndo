@@ -7,6 +7,7 @@ CARSON_WORK_LOC_LAT, CARSON_WORK_LOC_LONG = 33.787034278680466, -84.379589317187
 ANGELA_WORK_LOC_LAT, ANGELA_WORK_LOC_LONG = 33.80001232871316, -84.3243549597764
 LATITUDE_TO_MILES, LONGITUDE_TO_MILES = 68.939, 54.583
 MAX_DIST = 20.0
+DIST_MAX_SCORE, DIST_MIN_SCORE = 2.0, 0.5
 MIN_SCORE = 5.0
 ACRE_TO_SQFT = 43560.0
 class ListingScorer(object):
@@ -72,15 +73,43 @@ class ListingScorer(object):
         else:
             self._lot_score = 0.5
 
-    def _work_dist_score(self):
+    def set_work_dist_score(self):
         """
         Gets distances from respective workplaces, averages them, and then assigns
         them a score based on MAX_DIST
         """
+        dist_part1 = calculate_pythag_dist(
+            CARSON_WORK_LOC_LAT, CARSON_WORK_LOC_LONG, self._raw_loc["latitude"],
+            self._raw_loc["longitude"]
+            )
+        dist_part2 = calculate_pythag_dist(
+            ANGELA_WORK_LOC_LAT, ANGELA_WORK_LOC_LONG, self._raw_loc["latitude"],
+            self._raw_loc["longitude"]
+            )
+        avg_dist = (dist_part1 + dist_part2) / 2.0
+
+        if avg_dist >= MAX_DIST:
+            self._work_dist_score = 0.5
+        else:
+            self._work_dist_score = (-0.075 * avg_dist) + 2.375
 
     def calculate_pythag_dist(lat1, long1, lat2, long2):
         """
         Calculates distance from two points using latitude and longitude
+
+        Parameters
+        ----------
+        lat1, long1 : float
+            Latitude and longitude values for 1st of two locations
+        lat2, long2 : float
+            Latitude and longitude values for 2nd of two locations
+
+        Returns
+        -------
+        dist : float
+            is the distance in miles from 1st point to the 2nd
+
+        NOTE: order of points does not matter
         """
         lat_diff = abs(lat1 - lat2) * LATITUDE_TO_MILES
         long_diff = abs(long1 - long2) * LONGITUDE_TO_MILES
@@ -90,7 +119,7 @@ class ListingScorer(object):
     
     def set_raw_score(self):
         self._raw_score = (
-            (self._bed_score + self._bath_score + self._lot_score)
+            (self._bed_score + self._bath_score + self._lot_score + self._work_dist_score)
             * self._price_score 
         )
     
@@ -130,6 +159,7 @@ class ListingScorer(object):
             self.set_bed_score()
             self.set_bath_score()
             self.set_lot_score()
+            self.set_work_dist_score()
             # all scores need to be set before this gets executed
             self.set_raw_score()
             temp = self._currently_assessed_listing["imgSrc"]
