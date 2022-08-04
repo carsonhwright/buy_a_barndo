@@ -8,9 +8,9 @@ ANGELA_WORK_LOC_LAT, ANGELA_WORK_LOC_LONG = 33.80001232871316, -84.3243549597764
 LATITUDE_TO_MILES, LONGITUDE_TO_MILES = 68.939, 54.583
 MAX_DIST = 20.0
 DIST_MAX_SCORE, DIST_MIN_SCORE = 2.0, 0.5
-MIN_SCORE = 5.0
+MIN_SCORE = 6.5
 ACRE_TO_SQFT = 43560.0
-class ListingScorer(object):
+class InitialListingScorer(object):
     _defaults = [
         '_data_set', '_initial_pass_listing', '_min_score'
     ]
@@ -32,6 +32,30 @@ class ListingScorer(object):
 
     def clear_volatiles(self):
         self.__dict__.update(dict.fromkeys(self._volatiles, self._default_value))
+
+    def calculate_pythag_dist(self, lat1, long1, lat2, long2):
+        """
+        Calculates distance from two points using latitude and longitude
+
+        Parameters
+        ----------
+        lat1, long1 : float
+            Latitude and longitude values for 1st of two locations
+        lat2, long2 : float
+            Latitude and longitude values for 2nd of two locations
+
+        Returns
+        -------
+        dist : float
+            is the distance in miles from 1st point to the 2nd
+
+        NOTE: order of points does not matter
+        """
+        lat_diff = abs(lat1 - lat2) * LATITUDE_TO_MILES
+        long_diff = abs(long1 - long2) * LONGITUDE_TO_MILES
+
+        dist = math.sqrt(lat_diff**2 + long_diff**2)
+        return dist
 
     def set_price_score(self):
         low = 250000.0
@@ -78,11 +102,11 @@ class ListingScorer(object):
         Gets distances from respective workplaces, averages them, and then assigns
         them a score based on MAX_DIST
         """
-        dist_part1 = calculate_pythag_dist(
+        dist_part1 = self.calculate_pythag_dist(
             CARSON_WORK_LOC_LAT, CARSON_WORK_LOC_LONG, self._raw_loc["latitude"],
             self._raw_loc["longitude"]
             )
-        dist_part2 = calculate_pythag_dist(
+        dist_part2 = self.calculate_pythag_dist(
             ANGELA_WORK_LOC_LAT, ANGELA_WORK_LOC_LONG, self._raw_loc["latitude"],
             self._raw_loc["longitude"]
             )
@@ -92,30 +116,6 @@ class ListingScorer(object):
             self._work_dist_score = 0.5
         else:
             self._work_dist_score = (-0.075 * avg_dist) + 2.375
-
-    def calculate_pythag_dist(lat1, long1, lat2, long2):
-        """
-        Calculates distance from two points using latitude and longitude
-
-        Parameters
-        ----------
-        lat1, long1 : float
-            Latitude and longitude values for 1st of two locations
-        lat2, long2 : float
-            Latitude and longitude values for 2nd of two locations
-
-        Returns
-        -------
-        dist : float
-            is the distance in miles from 1st point to the 2nd
-
-        NOTE: order of points does not matter
-        """
-        lat_diff = abs(lat1 - lat2) * LATITUDE_TO_MILES
-        long_diff = abs(long1 - long2) * LONGITUDE_TO_MILES
-
-        dist = math.sqrt(lat_diff**2 + long_diff**2)
-        return dist
     
     def set_raw_score(self):
         self._raw_score = (
