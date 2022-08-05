@@ -6,9 +6,9 @@ MIN_LOT_SIZE, IDEAL_LOT_SIZE = 0.25, 0.5
 CARSON_WORK_LOC_LAT, CARSON_WORK_LOC_LONG = 33.787034278680466, -84.37958931718705
 ANGELA_WORK_LOC_LAT, ANGELA_WORK_LOC_LONG = 33.80001232871316, -84.3243549597764
 LATITUDE_TO_MILES, LONGITUDE_TO_MILES = 68.939, 54.583
-MAX_DIST = 20.0
+MAX_DIST, MIN_DIST = 20.0, 2.0
 DIST_MAX_SCORE, DIST_MIN_SCORE = 2.0, 0.5
-MIN_SCORE = 6.5
+MIN_SCORE = 6.0
 ACRE_TO_SQFT = 43560.0
 class InitialListingScorer(object):
     _defaults = [
@@ -29,6 +29,7 @@ class InitialListingScorer(object):
         self.__dict__.update(kwargs)
         self.set_data_set()
         self.score_data_set()
+        self.debug_out()
 
     def clear_volatiles(self):
         self.__dict__.update(dict.fromkeys(self._volatiles, self._default_value))
@@ -113,10 +114,15 @@ class InitialListingScorer(object):
         avg_dist = (dist_part1 + dist_part2) / 2.0
 
         if avg_dist >= MAX_DIST:
-            self._work_dist_score = 0.5
+            self._work_dist_score = DIST_MIN_SCORE
+        elif avg_dist < MIN_DIST:
+            self._work_dist_score = DIST_MAX_SCORE
         else:
-            self._work_dist_score = (-0.075 * avg_dist) + 2.375
+            slope = (-(DIST_MAX_SCORE - DIST_MIN_SCORE)) / (abs(MIN_DIST-MAX_DIST))
+            intercept = DIST_MAX_SCORE - (MIN_DIST * slope)
+            self._work_dist_score = (slope * avg_dist) + intercept
     
+
     def set_raw_score(self):
         self._raw_score = (
             (self._bed_score + self._bath_score + self._lot_score + self._work_dist_score)
@@ -171,4 +177,7 @@ class InitialListingScorer(object):
             if self._raw_score > MIN_SCORE:
                 self._initial_pass_listing.append(self._currently_assessed_listing)
             self.clear_volatiles()
-            
+
+    def debug_out(self):
+        for i in self._initial_pass_listing: 
+            print(str(i["detailUrl"]) + "  -  " + str(i["initial_raw_score"]))

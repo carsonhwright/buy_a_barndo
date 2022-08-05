@@ -35,9 +35,7 @@ class Driver_Setup(object):
         self.driver.get(url)
         # search_box = self.driver.find_element_by_id(searchbox_id)
         # search_box.send_keys(seach_item)
-        time.sleep(0.2)
         # search_box.send_keys(Keys.RETURN)
-        time.sleep(4)
         # driver.quit()
 
     def init_driver(self):
